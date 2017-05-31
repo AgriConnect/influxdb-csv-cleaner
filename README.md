@@ -26,9 +26,12 @@ influxdb-csv-cleaner sample.csv -t Asia/Ho_Chi_Minh -o clean.csv
 The ouput will be:
 
 ```
-    2017-03-15 09:13:49 +07,29.1,5
-    2017-03-15 09:13:59 +07,29.2,5
+    time,temperature
+    2017-03-15 09:13:49 +07,29.1
+    2017-03-15 09:13:59 +07,29.2
 ```
+
+Note: The header line can apear many times in the InfluxDB export file, because `influx` client then makes chunked queries to handle big data. But `influxdb-csv-cleaner` tool will skip all of them, except the top line.
 
 You can also use the tool in pipeline to clean on the _stdin_ stream:
 
