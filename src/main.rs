@@ -11,6 +11,7 @@
 //!    2017-03-15 09:13:59 +07,29.2,5
 //!
 
+#[macro_use]
 extern crate clap;
 extern crate chrono;
 extern crate chrono_tz;
@@ -30,7 +31,7 @@ use chrono_tz::Tz;
 
 fn main() {
 	let matches = App::new("Cleaning InfluxDB's export CSV")
-		.version("0.1").author("Nguyễn Hồng Quân")
+		.version(crate_version!()).author(crate_authors!())
 		.about("Clean CSV file, exported from InfluxDB.\n\
 		       Remove the first column (measurement name) and convert timezone for time column")
 		.arg(Arg::with_name("INPUT")
