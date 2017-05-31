@@ -2,11 +2,13 @@
 //!
 //! Sample input:
 //!
-//!    1489544029,29.1,5
-//!    1489544039,29.2,5
+//!    name,time,temperature,crop_id
+//!    condition,1489544029,29.1,5
+//!    condition,1489544039,29.2,5
 //!
 //! Output with timezone Asia/Ho_Chi_Minh:
 //!
+//!    time,temperature,crop_id
 //!    2017-03-15 09:13:49 +07,29.1,5
 //!    2017-03-15 09:13:59 +07,29.2,5
 //!
@@ -66,11 +68,30 @@ fn main() {
 
 	let mut datetime_string;  // To own a String later
 	let mut rows: Vec<String> = Vec::new();
+	let mut on_first_line = true;
 
 	for wline in reader.lines() {
 		let line = wline.unwrap();
 		let mut columns: Vec<&str> = line.split(',').collect();
-		let timestamp = columns[0].parse::<i64>().unwrap();
+		// First column is measurement name. Remove it
+		columns.remove(0);
+		// The second column becomes 1st, and should contain timestamp in UTC
+		let timestamp = match columns[0].parse::<i64>() {
+			Err(_) => {
+				// If the line cannot be parsed, and is the first line of file,
+				// it is the header of CSV and we just return original to output
+				if on_first_line {
+					rows.push(columns.join(","));
+					on_first_line = false;
+				}
+				// If not the first line, print error and continue to next line
+				else {
+					writeln!(&mut io::stderr(), "Line {} doesn't starts with timestamp", line).unwrap();
+				}
+				continue
+			},
+			Ok(time) => time
+		};
 		let dest_datetime = UTC.timestamp(timestamp, 0).with_timezone(&dest_timezone);
 		datetime_string = dest_datetime.to_string();
 		columns[0] = datetime_string.as_str();
@@ -79,8 +100,9 @@ fn main() {
 
 	let mut writer: Box<Write> = match matches.value_of("output") {
 		Some(outfile) => {
-			let f = File::create(&Path::new(outfile)).unwrap();
-			Box::new(BufWriter::new(f))
+			let created = File::create(&Path::new(outfile));
+			assert!(created.is_ok(), "Failed. Cannot create file: {}", outfile);
+			Box::new(BufWriter::new(created.unwrap()))
 		},
 		None => Box::new(stdout.lock())
 	};
