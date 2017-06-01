@@ -31,26 +31,32 @@ use chrono::{TimeZone};
 use chrono_tz::Tz;
 
 
+fn concat_columns(last: String, current: &str) -> String {
+	last + "," + current
+}
+
+
 fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<String> {
-	let dest_datetime;
-	let mut columns: Vec<&str> = line.split(',').collect();
-	// First column is measurement name. Remove it
-	columns.remove(0);
-	// The second column becomes 1st, and should contain timestamp in UTC
-	let timestamp = columns[0].parse::<i64>();
+	let mut column_iter = line.split(',');
+	// First column is measurement name. Skip it
+	column_iter.next();
+	// The second column becomes the first, and should contain timestamp in UTC
+	let date_column = column_iter.next().unwrap();
+	let timestamp = date_column.parse::<i64>();
 	if timestamp.is_err() {
 		// If the line cannot be parsed, and is the first line of file,
 		// it is the header of CSV and we just return original to output
 		if on_first_line {
-			return Some(columns.join(","));
+			let new_line = column_iter.fold(date_column.to_string(), concat_columns);
+			return Some(new_line);
 		}
 		// If not the first line, print error and continue to next line
 		writeln!(&mut io::stderr(), "Line {} doesn't starts with timestamp", line).unwrap();
 		return None;
 	}
-	dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0).to_string();
-	columns[0] = dest_datetime.as_str();
-	Some(columns.join(","))
+	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0).to_string();
+	let new_line = column_iter.fold(dest_datetime, concat_columns);
+	Some(new_line)
 }
 
 
