@@ -27,8 +27,30 @@ use std::io::Write;
 use std::path::Path;
 
 use clap::{Arg, App};
-use chrono::{UTC, TimeZone};
+use chrono::{TimeZone};
 use chrono_tz::Tz;
+
+
+fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<String> {
+	let mut columns: Vec<String> = line.split(',').map(|s| s.to_string()).collect();
+	// First column is measurement name. Remove it
+	columns.remove(0);
+	// The second column becomes 1st, and should contain timestamp in UTC
+	let timestamp = columns[0].parse::<i64>();
+	if timestamp.is_err() {
+		// If the line cannot be parsed, and is the first line of file,
+		// it is the header of CSV and we just return original to output
+		if on_first_line {
+			return Some(columns.join(","));
+		}
+		// If not the first line, print error and continue to next line
+		writeln!(&mut io::stderr(), "Line {} doesn't starts with timestamp", line).unwrap();
+		return None;
+	}
+	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0);
+	columns[0] = dest_datetime.to_string();
+	Some(columns.join(","))
+}
 
 
 fn main() {
@@ -66,36 +88,11 @@ fn main() {
 		reader = Box::new(BufReader::new(f));
 	}
 
-	let mut datetime_string;  // To own a String later
 	let mut rows: Vec<String> = Vec::new();
-	let mut on_first_line = true;
 
-	for wline in reader.lines() {
+	for (i, wline) in reader.lines().enumerate() {
 		let line = wline.unwrap();
-		let mut columns: Vec<&str> = line.split(',').collect();
-		// First column is measurement name. Remove it
-		columns.remove(0);
-		// The second column becomes 1st, and should contain timestamp in UTC
-		let timestamp = match columns[0].parse::<i64>() {
-			Err(_) => {
-				// If the line cannot be parsed, and is the first line of file,
-				// it is the header of CSV and we just return original to output
-				if on_first_line {
-					rows.push(columns.join(","));
-					on_first_line = false;
-				}
-				// If not the first line, print error and continue to next line
-				else {
-					writeln!(&mut io::stderr(), "Line {} doesn't starts with timestamp", line).unwrap();
-				}
-				continue
-			},
-			Ok(time) => time
-		};
-		let dest_datetime = UTC.timestamp(timestamp, 0).with_timezone(&dest_timezone);
-		datetime_string = dest_datetime.to_string();
-		columns[0] = datetime_string.as_str();
-		rows.push(columns.join(","));
+		process_line(line, i == 0, dest_timezone).map(|l| rows.push(l));
 	}
 
 	let mut writer: Box<Write> = match matches.value_of("output") {
