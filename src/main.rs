@@ -32,7 +32,8 @@ use chrono_tz::Tz;
 
 
 fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<String> {
-	let mut columns: Vec<String> = line.split(',').map(|s| s.to_string()).collect();
+	let dest_datetime;
+	let mut columns: Vec<&str> = line.split(',').collect();
 	// First column is measurement name. Remove it
 	columns.remove(0);
 	// The second column becomes 1st, and should contain timestamp in UTC
@@ -47,8 +48,8 @@ fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<
 		writeln!(&mut io::stderr(), "Line {} doesn't starts with timestamp", line).unwrap();
 		return None;
 	}
-	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0);
-	columns[0] = dest_datetime.to_string();
+	dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0).to_string();
+	columns[0] = dest_datetime.as_str();
 	Some(columns.join(","))
 }
 
