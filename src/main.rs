@@ -41,7 +41,10 @@ fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<
 	// First column is measurement name. Skip it
 	column_iter.next();
 	// The second column becomes the first, and should contain timestamp in UTC
-	let date_column = column_iter.next().unwrap();
+	let date_column = match column_iter.next() {
+		Some(value) => value,
+		None => return None
+	};
 	let timestamp = date_column.parse::<i64>();
 	if timestamp.is_err() {
 		// If the line cannot be parsed, and is the first line of file,
@@ -80,21 +83,20 @@ fn main() {
 		.get_matches();
 
 	let infile = matches.value_of("INPUT").unwrap();
-	let timezone_name = matches.value_of("timezone");
-	let mut dest_timezone: Tz = chrono_tz::UTC;
-	let stdout = io::stdout();
-	if timezone_name.is_some() {
-		let parsed = timezone_name.unwrap().parse();
-		dest_timezone = parsed.expect("Invalid timezone!");
-	}
+	let dest_timezone = match matches.value_of("timezone") {
+		Some(name) => name.parse().expect("Invalid timezone"),
+		None => chrono_tz::UTC
+	};
+
 	let stdin = io::stdin();
-	let mut reader = Box::new(stdin.lock()) as Box<BufRead>;
-
-	if infile != "-" {
+	let reader = if infile == "-" {
+		Box::new(stdin.lock()) as Box<BufRead>
+	} else {
 		let f = File::open(infile).expect("File not found.");
-		reader = Box::new(BufReader::new(f));
-	}
+		Box::new(BufReader::new(f))
+	};
 
+	let stdout = io::stdout();
 	let mut writer: Box<Write> = match matches.value_of("output") {
 		Some(outfile) => {
 			let created = File::create(&Path::new(outfile));
