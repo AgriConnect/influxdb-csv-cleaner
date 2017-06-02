@@ -36,7 +36,7 @@ fn concat_columns(last: String, current: &str) -> String {
 }
 
 
-fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<String> {
+fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, quiet: bool) -> Option<String> {
 	let mut column_iter = line.split(',');
 	// First column is measurement name. Skip it
 	column_iter.next();
@@ -54,7 +54,9 @@ fn process_line(line: String, on_first_line: bool, dest_timezone: Tz) -> Option<
 			return Some(new_line);
 		}
 		// If not the first line, print error and continue to next line
-		writeln!(&mut io::stderr(), "Line {} doesn't starts with timestamp", line).unwrap();
+		if !quiet {
+			writeln!(&mut io::stderr(), "Line {} doesn't start with timestamp", line).unwrap();
+		}
 		return None;
 	}
 	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0).to_string();
@@ -71,6 +73,9 @@ fn main() {
 		.arg(Arg::with_name("INPUT")
 		     .help("Input file name. - for stdin.")
 		     .required(true))
+		.arg(Arg::with_name("quiet")
+		     .short("q")
+		     .help("Quiet. No error message when parsing CSV."))
 		.arg(Arg::with_name("timezone")
 		     .short("t")
 		     .value_name("Timezone name")
@@ -87,6 +92,7 @@ fn main() {
 		Some(name) => name.parse().expect("Invalid timezone"),
 		None => chrono_tz::UTC
 	};
+	let quiet = matches.is_present("quiet");
 
 	let stdin = io::stdin();
 	let reader = if infile == "-" {
@@ -108,7 +114,7 @@ fn main() {
 
 	for (i, wline) in reader.lines().enumerate() {
 		let line = wline.unwrap();
-		process_line(line, i == 0, dest_timezone)
+		process_line(line, i == 0, dest_timezone, quiet)
 			.map(|l| writeln!(&mut writer, "{}", l).unwrap());
 	}
 }
