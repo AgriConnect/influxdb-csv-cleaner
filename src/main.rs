@@ -95,13 +95,6 @@ fn main() {
 		reader = Box::new(BufReader::new(f));
 	}
 
-	let mut rows: Vec<String> = Vec::new();
-
-	for (i, wline) in reader.lines().enumerate() {
-		let line = wline.unwrap();
-		process_line(line, i == 0, dest_timezone).map(|l| rows.push(l));
-	}
-
 	let mut writer: Box<Write> = match matches.value_of("output") {
 		Some(outfile) => {
 			let created = File::create(&Path::new(outfile));
@@ -110,5 +103,10 @@ fn main() {
 		},
 		None => Box::new(stdout.lock())
 	};
-	writeln!(&mut writer, "{}", rows.join("\n")).unwrap();
+
+	for (i, wline) in reader.lines().enumerate() {
+		let line = wline.unwrap();
+		process_line(line, i == 0, dest_timezone)
+			.map(|l| writeln!(&mut writer, "{}", l).unwrap());
+	}
 }
