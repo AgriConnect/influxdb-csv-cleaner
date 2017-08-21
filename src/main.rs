@@ -27,7 +27,7 @@ use std::io::Write;
 use std::path::Path;
 
 use clap::{Arg, App};
-use chrono::{TimeZone};
+use chrono::{TimeZone, NaiveTime};
 use chrono_tz::Tz;
 
 
@@ -36,7 +36,7 @@ fn concat_columns(last: String, current: &str) -> String {
 }
 
 
-fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, quiet: bool) -> Option<String> {
+fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, time_point: Option<NaiveTime>, quiet: bool) -> Option<String> {
 	let mut column_iter = line.split(',');
 	// First column is measurement name. Skip it
 	column_iter.next();
@@ -59,8 +59,13 @@ fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, quiet: boo
 		}
 		return None;
 	}
-	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0).to_string();
-	let new_line = column_iter.fold(dest_datetime, concat_columns);
+	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0);
+	// Filter against time_point
+	match time_point {
+		Some(t) => if dest_datetime.time() != t { return None },
+		None => {}
+	}
+	let new_line = column_iter.fold(dest_datetime.to_string(), concat_columns);
 	Some(new_line)
 }
 
@@ -78,9 +83,13 @@ fn main() {
 		     .help("Quiet. No error message when parsing CSV."))
 		.arg(Arg::with_name("timezone")
 		     .short("t")
-		     .value_name("Timezone name")
-		     .help("Timezone (Asia/Ho_Chi_Minh) to convert to. \n
+		     .value_name("timezone name")
+		     .help("Timezone (e.g. Asia/Ho_Chi_Minh) to convert to. \n
 		           Original InfluxDB CSV has time in UTC."))
+		.arg(Arg::with_name("time_point")
+		     .short("p")
+		     .value_name("time point")
+		     .help("Filter and get only row at this time point (e.g. 07:00:00, of destination timezone) in a day."))
 		.arg(Arg::with_name("output")
 		     .short("o")
 		     .value_name("file name")
@@ -93,6 +102,14 @@ fn main() {
 		None => chrono_tz::UTC
 	};
 	let quiet = matches.is_present("quiet");
+
+	let time_point = if matches.is_present("time_point") {
+		let time_string = matches.value_of("time_point").unwrap();
+		match NaiveTime::parse_from_str(time_string, "%H:%M:%S") {
+			Ok(parsed_time) => Some(parsed_time),
+			Err(_) => panic!("Invalid time string. Should be in form of HH:MM:SS.")
+		}
+	} else {None};
 
 	let stdin = io::stdin();
 	let reader = if infile == "-" {
@@ -114,7 +131,7 @@ fn main() {
 
 	for (i, wline) in reader.lines().enumerate() {
 		let line = wline.unwrap();
-		process_line(line, i == 0, dest_timezone, quiet)
+		process_line(line, i == 0, dest_timezone, time_point, quiet)
 			.map(|l| writeln!(&mut writer, "{}", l).unwrap());
 	}
 }
