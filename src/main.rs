@@ -61,9 +61,8 @@ fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, time_point
 	}
 	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0);
 	// Filter against time_point
-	match time_point {
-		Some(t) => if dest_datetime.time() != t { return None },
-		None => {}
+	if let Some(t) = time_point {
+		if dest_datetime.time() != t { return None }
 	}
 	let new_line = column_iter.fold(dest_datetime.to_string(), concat_columns);
 	Some(new_line)
