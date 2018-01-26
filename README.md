@@ -1,6 +1,29 @@
 # influxdb-csv-cleaner
 Tool to clean CSV content exported from [InfluxDB](https://www.influxdata.com/).
 
+## Build
+
+1. For BeagleBone
+
+    - Install _gcc-6-arm-linux-gnueabihf_, _binutils-arm-linux-gnueabihf_ packages.
+    - Install _armv7-unknown-linux-gnueabihf_ target for Rust:
+
+    ```sh
+    rustup target install armv7-unknown-linux-gnueabihf
+    ```
+
+    - Build with command:
+
+    ```sh
+    cargo build --target=armv7-unknown-linux-gnueabihf --release
+    ```
+
+    - Strip the compiled file to reduce file size:
+
+    ```sh
+    /usr/arm-linux-gnueabihf/bin/strip target/armv7-unknown-linux-gnueabihf/release/influxdb-csv-cleaner
+    ```
+
 ## Example
 
 You export data from InfluxDB with this command:
