@@ -1,6 +1,8 @@
 # influxdb-csv-cleaner
 Tool to clean CSV content exported from [InfluxDB](https://www.influxdata.com/).
 
+This tool used to support converting timezone for exported data, but has been dropped in v0.2.0.
+
 ## Build
 
 1. For BeagleBone
@@ -29,7 +31,7 @@ Tool to clean CSV content exported from [InfluxDB](https://www.influxdata.com/).
 You export data from InfluxDB with this command:
 
 ```
-influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100"
+influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100 TZ('Asia/Ho_Chi_Minh')"
 ```
 
 And save to a file _sample.csv_:
@@ -40,18 +42,18 @@ And save to a file _sample.csv_:
     condition,1489544039,29.2
 ```
 
-Now, you want to remove the first column and convert the time to _Asia/Ho_Chi_Minh_ timezone:
+Now, you want to remove the first column:
 
 ```
-influxdb-csv-cleaner sample.csv -t Asia/Ho_Chi_Minh -o clean.csv
+influxdb-csv-cleaner sample.csv -o clean.csv
 ```
 
 The ouput will be:
 
 ```
     time,temperature
-    2017-03-15 09:13:49 +07,29.1
-    2017-03-15 09:13:59 +07,29.2
+    2017-03-15 09:13:49,29.1
+    2017-03-15 09:13:59,29.2
 ```
 
 Note: The header line can apear many times in the InfluxDB export file, because `influx` client then makes chunked queries to handle big data. But `influxdb-csv-cleaner` tool will skip all of them, except the top line.
@@ -59,5 +61,5 @@ Note: The header line can apear many times in the InfluxDB export file, because 
 You can also use the tool in pipeline to clean on the _stdin_ stream:
 
 ```
-influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100" | influxdb-csv-cleaner - -t Asia/Ho_Chi_Minh
+influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100 TZ('Asia/Ho_Chi_Minh')" | influxdb-csv-cleaner -
 ```
