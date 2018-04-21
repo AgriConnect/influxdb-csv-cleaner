@@ -1,11 +1,23 @@
 [package]
 name = "influxdb-csv-cleaner"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Nguyễn Hồng Quân <ng.hong.quan@gmail.com>"]
+license = "GPL-3.0"
 publish = false
-homepage = "http://agriconnect.vn"
+homepage = "https://agriconnect.vn"
+repository = "https://github.com/AgriConnect/influxdb-csv-cleaner"
+description = "Tool to clean CSV content exported from InfluxDB."
+readme = "README.md"
+
+[package.metadata.deb]
+extended-description = """Tool to clean CSV content exported from InfluxDB, so that it can be understood by plotting tool, like plot.ly.
+What it does:
+
+ - Remove repeated header lines, appearing in the middle of file.
+ - Remove first column, which is just table name.
+ - Convert timestamp in "time" column to a readable format, like "2018-01-30 00:00:00".
+"""
 
 [dependencies]
 clap = "2"
 chrono = "0.4"
-human-panic = "0.4"

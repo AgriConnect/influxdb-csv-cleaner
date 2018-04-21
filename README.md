@@ -1,7 +1,14 @@
 # influxdb-csv-cleaner
+
 Tool to clean CSV content exported from [InfluxDB](https://www.influxdata.com/).
 
 This tool used to support converting timezone for exported data, but has been dropped in v0.2.0.
+
+## What it does
+
+ - Remove repeated header lines, appearing in the middle of file.
+ - Remove first column, which is just table (measurement) name.
+ - Convert timestamp in "time" column to a readable format, like "2018-01-30 00:00:00".
 
 ## Build
 
@@ -25,6 +32,10 @@ This tool used to support converting timezone for exported data, but has been dr
     ```sh
     /usr/arm-linux-gnueabihf/bin/strip target/armv7-unknown-linux-gnueabihf/release/influxdb-csv-cleaner
     ```
+
+2. For PC
+
+Too simple to tell.
 
 ## Example
 

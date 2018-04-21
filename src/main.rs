@@ -16,8 +16,6 @@
 #[macro_use]
 extern crate clap;
 extern crate chrono;
-#[macro_use]
-extern crate human_panic;
 
 use std::io;
 use std::fs::File;
@@ -70,7 +68,6 @@ fn process_line(line: String, on_first_line: bool, time_point: Option<NaiveTime>
 
 
 fn main() {
-	setup_panic!();
 	let matches = App::new("Cleaning InfluxDB's export CSV")
 		.version(crate_version!()).author(crate_authors!())
 		.about("Clean CSV file, exported from InfluxDB.\n\
