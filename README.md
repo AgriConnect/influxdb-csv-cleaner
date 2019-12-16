@@ -21,6 +21,13 @@ This tool used to support converting timezone for exported data, but has been dr
     rustup target install armv7-unknown-linux-gnueabihf
     ```
 
+    - If you are cross-compiling from PC, need to add this content to _.cargo/config_ file:
+
+    ```toml
+    [target.armv7-unknown-linux-gnueabihf]
+    linker = "arm-linux-gnueabihf-gcc"
+    ```
+
     - Build with command:
 
     ```sh
