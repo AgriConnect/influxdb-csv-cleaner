@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.2
+* Bring back timezone conversion feature.
+
 ## 0.2.1
 * Add more info to help build debian package.
 * (Internal) Drop use of "human-panic". It is not the thing I need.

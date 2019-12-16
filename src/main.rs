@@ -23,7 +23,8 @@ use std::path::Path;
 
 use clap::{Arg, App};
 use clap::{crate_version, crate_authors};
-use chrono::{NaiveDateTime, NaiveTime};
+use chrono::{TimeZone, NaiveTime};
+use chrono_tz::Tz;
 
 
 fn concat_columns(last: String, current: &str) -> String {
@@ -31,7 +32,7 @@ fn concat_columns(last: String, current: &str) -> String {
 }
 
 
-fn process_line(line: String, on_first_line: bool, time_point: Option<NaiveTime>, quiet: bool) -> Option<String> {
+fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, time_point: Option<NaiveTime>, quiet: bool) -> Option<String> {
 	let mut column_iter = line.split(',');
 	// First column is measurement name. Skip it
 	column_iter.next();
@@ -54,7 +55,7 @@ fn process_line(line: String, on_first_line: bool, time_point: Option<NaiveTime>
 		}
 		return None;
 	}
-	let dest_datetime = NaiveDateTime::from_timestamp(timestamp.unwrap(), 0);
+	let dest_datetime = dest_timezone.timestamp(timestamp.unwrap(), 0);
 	// Filter against time_point
 	if let Some(t) = time_point {
 		if dest_datetime.time() != t { return None }
@@ -68,13 +69,18 @@ fn main() {
 	let matches = App::new("Cleaning InfluxDB's export CSV")
 		.version(crate_version!()).author(crate_authors!())
 		.about("Clean CSV file, exported from InfluxDB.\n\
-		       Remove the first column (measurement name)")
+		       Remove the first column (measurement name) and convert timezone for time column")
 		.arg(Arg::with_name("INPUT")
 		     .help("Input file name. - for stdin.")
 		     .required(true))
 		.arg(Arg::with_name("quiet")
 		     .short("q")
 		     .help("Quiet. No error message when parsing CSV."))
+		.arg(Arg::with_name("timezone")
+		     .short("t")
+		     .value_name("timezone name")
+		     .help("Timezone (e.g. Asia/Ho_Chi_Minh) to convert to. \n
+		           Original InfluxDB CSV has time in UTC."))
 		.arg(Arg::with_name("time_point")
 		     .short("p")
 		     .value_name("time point")
@@ -86,6 +92,10 @@ fn main() {
 		.get_matches();
 
 	let infile = matches.value_of("INPUT").unwrap();
+	let dest_timezone = match matches.value_of("timezone") {
+		Some(name) => name.parse().expect("Invalid timezone"),
+		None => chrono_tz::UTC
+	};
 	let quiet = matches.is_present("quiet");
 
 	let time_point = if matches.is_present("time_point") {
@@ -116,7 +126,7 @@ fn main() {
 
 	for (i, wline) in reader.lines().enumerate() {
 		let line = wline.unwrap();
-		process_line(line, i == 0, time_point, quiet)
+		process_line(line, i == 0, dest_timezone, time_point, quiet)
 			.map(|l| writeln!(&mut writer, "{}", l).unwrap());
 	}
 }
