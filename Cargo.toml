@@ -8,6 +8,7 @@ homepage = "https://agriconnect.vn"
 repository = "https://github.com/AgriConnect/influxdb-csv-cleaner"
 description = "Tool to clean CSV content exported from InfluxDB."
 readme = "README.md"
+edition = "2018"
 
 [package.metadata.deb]
 extended-description = """Tool to clean CSV content exported from InfluxDB, so that it can be understood by plotting tool, like plot.ly.

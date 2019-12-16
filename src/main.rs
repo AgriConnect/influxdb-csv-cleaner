@@ -13,10 +13,6 @@
 //!    2017-03-15 09:13:59 +07,29.2,5
 //!
 
-#[macro_use]
-extern crate clap;
-extern crate chrono;
-
 use std::io;
 use std::fs::File;
 use std::io::BufRead;
@@ -26,6 +22,7 @@ use std::io::Write;
 use std::path::Path;
 
 use clap::{Arg, App};
+use clap::{crate_version, crate_authors};
 use chrono::{NaiveDateTime, NaiveTime};
 
 
@@ -101,14 +98,14 @@ fn main() {
 
 	let stdin = io::stdin();
 	let reader = if infile == "-" {
-		Box::new(stdin.lock()) as Box<BufRead>
+		Box::new(stdin.lock()) as Box<dyn BufRead>
 	} else {
 		let f = File::open(infile).expect("File not found.");
 		Box::new(BufReader::new(f))
 	};
 
 	let stdout = io::stdout();
-	let mut writer: Box<Write> = match matches.value_of("output") {
+	let mut writer: Box<dyn Write> = match matches.value_of("output") {
 		Some(outfile) => {
 			let created = File::create(&Path::new(outfile));
 			assert!(created.is_ok(), "Failed. Cannot create file: {}", outfile);
