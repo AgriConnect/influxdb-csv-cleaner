@@ -2,8 +2,6 @@
 
 Tool to clean CSV content exported from [InfluxDB](https://www.influxdata.com/).
 
-This tool used to support converting timezone for exported data, but has been dropped in v0.2.0.
-
 ## What it does
 
  - Remove repeated header lines, appearing in the middle of file.
@@ -49,7 +47,7 @@ Too simple to tell.
 You export data from InfluxDB with this command:
 
 ```sh
-influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100 TZ('Asia/Ho_Chi_Minh')"
+influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100"
 ```
 
 And save to a file _sample.csv_:
@@ -63,7 +61,7 @@ And save to a file _sample.csv_:
 Now, you want to remove the first column:
 
 ```sh
-influxdb-csv-cleaner sample.csv -o clean.csv
+influxdb-csv-cleaner sample.csv -t Asia/Ho_Chi_Minh -o clean.csv
 ```
 
 The ouput will be:
@@ -81,7 +79,7 @@ Note: The header line can apear many times in the InfluxDB export file, because 
 You can also use the tool in pipeline to clean on the _stdin_ stream:
 
 ```sh
-influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100 TZ('Asia/Ho_Chi_Minh')" | influxdb-csv-cleaner -
+influx -database myfarm -precision s -format csv -execute "SELECT temperature FROM condition LIMIT 100" | influxdb-csv-cleaner - -t Asia/Ho_Chi_Minh
 ```
 
 Please run

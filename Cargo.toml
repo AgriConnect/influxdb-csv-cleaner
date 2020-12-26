@@ -1,6 +1,6 @@
 [package]
 name = "influxdb-csv-cleaner"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Nguyễn Hồng Quân <ng.hong.quan@gmail.com>"]
 license = "GPL-3.0"
 publish = false
@@ -20,6 +20,8 @@ What it does:
 """
 
 [dependencies]
-clap = "2.33.0"
-chrono = "0.4.10"
-chrono-tz = "0.5.1"
+clap = "2.33.3"
+chrono-tz = "0.5.3"
+chrono = "0.4.19"
+eyre = "0.6.3"
+color-eyre = "0.5.10"

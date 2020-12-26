@@ -25,6 +25,8 @@ use clap::{Arg, App};
 use clap::{crate_version, crate_authors};
 use chrono::{TimeZone, NaiveTime};
 use chrono_tz::Tz;
+use color_eyre::eyre::Result;
+use eyre::{WrapErr, eyre};
 
 
 fn concat_columns(last: String, current: &str) -> String {
@@ -65,7 +67,7 @@ fn process_line(line: String, on_first_line: bool, dest_timezone: Tz, time_point
 }
 
 
-fn main() {
+fn main() -> Result<()> {
 	let matches = App::new("Cleaning InfluxDB's export CSV")
 		.version(crate_version!()).author(crate_authors!())
 		.about("Clean CSV file, exported from InfluxDB.\n\
@@ -91,9 +93,10 @@ fn main() {
 		     .help("Output file name. Ommit to write to stdout."))
 		.get_matches();
 
+	color_eyre::install()?;
 	let infile = matches.value_of("INPUT").unwrap();
 	let dest_timezone = match matches.value_of("timezone") {
-		Some(name) => name.parse().expect("Invalid timezone"),
+		Some(name) => name.parse::<Tz>().map_err(|e| eyre!(e))?,
 		None => chrono_tz::UTC
 	};
 	let quiet = matches.is_present("quiet");
@@ -110,7 +113,7 @@ fn main() {
 	let reader = if infile == "-" {
 		Box::new(stdin.lock()) as Box<dyn BufRead>
 	} else {
-		let f = File::open(infile).expect("File not found.");
+		let f = File::open(infile).wrap_err_with(|| format!("Failed to open {} file!", infile))?;
 		Box::new(BufReader::new(f))
 	};
 
@@ -129,4 +132,5 @@ fn main() {
 		process_line(line, i == 0, dest_timezone, time_point, quiet)
 			.map(|l| writeln!(&mut writer, "{}", l).unwrap());
 	}
+	Ok(())
 }

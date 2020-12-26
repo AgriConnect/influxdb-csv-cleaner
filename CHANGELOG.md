@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.3
+* Learn new Rust error handling technique.
+
 ## 0.2.2
 * Bring back timezone conversion feature.
 
